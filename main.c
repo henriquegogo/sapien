@@ -53,31 +53,27 @@ void setup_database(sqlite3 *db) {
 
     asprintf(&sql, "CREATE VIEW IF NOT EXISTS %s_view AS\n\
 SELECT *, json_object(%s\n) AS _json_ FROM %s", table, select_attrs, table);
-    sqlite3_exec(db, sql, 0, 0, 0);
-    free(sql), free(select_attrs);
+    sqlite3_exec(db, sql, 0, 0, 0), free(sql), free(select_attrs);
 
     asprintf(&sql, "CREATE TRIGGER IF NOT EXISTS post_%s INSTEAD OF\n\
 INSERT ON %s_view BEGIN\n\
   INSERT INTO %s\n\
   SELECT NULL, %s;\n\
-END", table, table, table, insert_attrs);
-    sqlite3_exec(db, sql, 0, 0, 0);
-    free(sql), free(insert_attrs);
+END", table, table, table, insert_attrs), free(insert_attrs);
+    sqlite3_exec(db, sql, 0, 0, 0), free(sql);
 
     asprintf(&sql, "CREATE TRIGGER IF NOT EXISTS put_%s INSTEAD OF\n\
 UPDATE ON %s_view BEGIN\n\
   UPDATE %s SET %s\n\
   WHERE id = NEW.id;\n\
-END", table, table, table, update_attrs);
-    sqlite3_exec(db, sql, 0, 0, 0);
-    free(sql), free(update_attrs);
+END", table, table, table, update_attrs), free(update_attrs);
+    sqlite3_exec(db, sql, 0, 0, 0), free(sql);
 
     asprintf(&sql, "CREATE TRIGGER IF NOT EXISTS delete_%s INSTEAD OF\n\
 DELETE ON %s_view BEGIN\n\
   DELETE FROM %s WHERE id = OLD.id;\n\
 END", table, table, table);
-    sqlite3_exec(db, sql, 0, 0, 0);
-    free(sql);
+    sqlite3_exec(db, sql, 0, 0, 0), free(sql);
   }
 
   sqlite3_finalize(stmt);
@@ -87,6 +83,7 @@ int handle_request(sqlite3 *db, sqlite3_stmt *stmt, FCGX_Request *request) {
   if (FCGX_Accept_r(request) != 0) return 0;
 
   int length = atoi(FCGX_GetParam("CONTENT_LENGTH", request->envp) ?: "0");
+  const char *content_type = "Content-Type: application/json\r\n\r\n";
   const char *method = FCGX_GetParam("REQUEST_METHOD", request->envp);
   const char *path   = FCGX_GetParam("REQUEST_URI", request->envp);
   const char *query  = FCGX_GetParam("QUERY_STRING", request->envp);
@@ -116,12 +113,10 @@ int handle_request(sqlite3 *db, sqlite3_stmt *stmt, FCGX_Request *request) {
     asprintf(&sql, "SELECT %s FROM %s WHERE %s", select, view, where);
   }
 
-  int error = sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK;
+  int status = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
   free(view), free(body), free(sql); 
 
-  const char *content_type = "Content-Type: application/json\r\n\r\n";
-  
-  if (error) {
+  if (status != SQLITE_OK) {
     FCGX_FPrintF(request->out, "Status: 400 Bad Request\r\n%s", content_type);
     return FCGX_FPrintF(request->out, "{\"error\":\"%s\"}", sqlite3_errmsg(db));
   } else if (!strcmp(method, "POST") && sqlite3_step(stmt)) {
