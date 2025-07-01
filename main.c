@@ -8,8 +8,7 @@ void setup_database(sqlite3 *db) {
   sqlite3_stmt *stmt = NULL;
 
   char *sql = strdup("SELECT name FROM sqlite_schema WHERE type = 'table'");
-  sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
-  free(sql);
+  sqlite3_prepare_v2(db, sql, -1, &stmt, 0), free(sql);
 
   while (sqlite3_step(stmt) == SQLITE_ROW) {
     const char *table = (const char *)sqlite3_column_text(stmt, 0);
@@ -21,8 +20,7 @@ void setup_database(sqlite3 *db) {
     char *update_attrs = strdup("");
 
     asprintf(&sql, "PRAGMA table_info(%s)", table);
-    sqlite3_prepare_v2(db, sql, -1, &cols_stmt, 0);
-    free(sql);
+    sqlite3_prepare_v2(db, sql, -1, &cols_stmt, 0), free(sql);
 
     while (sqlite3_step(cols_stmt) == SQLITE_ROW) {
       const char *col = (const char *)sqlite3_column_text(cols_stmt, 1);
