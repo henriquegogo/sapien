@@ -17,13 +17,13 @@ To build and run this project, you will need:
 
 ## Setup
 
-1.  **Initialize the database:**
-    The project comes with a `database.sql` file to set up the example schema
-    and data. To create the `database.db` file, run:
-    ```bash
+**Initialize the database:**
+The project comes with a `database.sql` file to set up the example schema
+and data. To create the `database.db` file, run:
+```bash
 make database
-    ```
-    This will create a table named `persons`.
+```
+This will create a table named `persons`.
 
 ## Running the Application
 
