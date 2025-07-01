@@ -133,11 +133,9 @@ int handle_request(sqlite3 *db, sqlite3_stmt *stmt, FCGX_Request *request) {
   } else if (!strcmp(method, "DELETE") && sqlite3_step(stmt)) {
     FCGX_FPrintF(request->out, "Status: 200 OK\r\n%s", content_type);
     FCGX_FPrintF(request->out, "{\"status\":\"deleted\"}\n");
-  } else {
+  } else if (sqlite3_step(stmt)) {
     FCGX_FPrintF(request->out, "Status: 200 OK\r\n%s", content_type);
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-      FCGX_FPrintF(request->out, "%s\n", sqlite3_column_text(stmt, 0));
-    }
+    FCGX_FPrintF(request->out, "%s\n", sqlite3_column_text(stmt, 0));
   }
 
   return 1;
