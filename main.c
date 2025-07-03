@@ -49,6 +49,28 @@ void setup_database(sqlite3 *db) {
 
     sqlite3_finalize(cols_stmt);
 
+    asprintf(&sql, "CREATE VIEW IF NOT EXISTS openapi_view AS\n\
+SELECT json_object(\n\
+  'openapi', '3.0.0',\n\
+  'info', json_object('title', 'API', 'version', '1.0.0'),\n\
+  'paths', (\n\
+    SELECT json_group_object(\n\
+      '/' || REPLACE(name, '_view', ''),\n\
+      json_object(\n\
+        'get', json_object(\n\
+          'summary', 'Get data from ' || name,\n\
+          'responses', json_object(\n\
+            '200', json_object('description', 'successful operation')\n\
+          )\n\
+        )\n\
+      )\n\
+    )\n\
+    FROM sqlite_schema\n\
+    WHERE type = 'view'\n\
+  )\n\
+) AS _json_");
+    sqlite3_exec(db, sql, 0, 0, 0), free(sql);
+
     asprintf(&sql, "CREATE VIEW IF NOT EXISTS %s_view AS\n\
 SELECT *, json_object(%s\n) AS _json_ FROM %s", table, select_attrs, table);
     sqlite3_exec(db, sql, 0, 0, 0), free(sql), free(select_attrs);
